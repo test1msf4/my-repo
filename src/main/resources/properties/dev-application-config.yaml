@@ -1,0 +1,28 @@
+api:
+  id: "20448784"
+  host: "0.0.0.0"
+  port: "8081"
+  readTimeout: "5000"
+    
+optibus:
+  protocol: "HTTPS"
+  port: "443"  
+  responseTimeout: "5000"
+  idleTimeout: "5000"
+  maxRetries: "3"
+  periodRetries: "300"
+  domain:
+    gipuzkoa:
+      host: "![9kCzsl6AzDQV2Y6QmxDDRrtBY62+79udZIbGU6n1cKiuFHAHWQHisWf41+Id0HlL]"
+      token: "![y9a4eSMAWI0aowU4XYZhhVdJjPPPsf7Y84IVf5PcBtCq9rHPHMIlmBMoOMxHmvfD]"
+    bizkaia:
+      host: "![/u/j6D9NXO/1/8ANwFwJzb6gYARmU4ue7P5awmnEyXcdx7lE9kuJRzJ1N14gaXeY]"
+      token: "![vI3Erc948GZYIxubLQnlRrzvb9h9fJUx6tFKYzHcuUD+NLmshbN6dxPNfnegDnOT]"
+  vehicles:
+    put:
+      path: "/vehicles" 
+  drivers:
+    put:
+      path: "/v1/drivers"
+
+    

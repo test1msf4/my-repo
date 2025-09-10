@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="put-vehicles-optibus-flow" doc:id="8b9da244-7756-4b78-a180-b528714d15d9" >
+		<flow-ref doc:name="initial-vars-subflow" doc:id="f60eaabc-6e9e-4ecf-80bd-b69fdd0ed822" name="initial-vars-subflow"/>
+		<logger level="INFO" doc:name="Start" doc:id="c23f9501-7ded-438b-a36e-9e8ca1456f62" message="Synchronize Vehicles Start: domain=#[vars.originalAttributes.headers.domain]" />
+		<logger level="DEBUG" doc:name="Request" doc:id="aa5d1b25-ca9a-4445-9a61-ea040f912ce5" message="Optibus API Request: domain=#[vars.originalAttributes.headers.domain], payload=#[sizeOf(payload.vehicles)]"/>
+		<!-- [STUDIO:"Until Successful"]<until-successful maxRetries="${optibus.maxRetries}" doc:name="Until Successful" doc:id="d90cea5b-850f-4cea-af0e-b477f2982440" millisBetweenRetries="${optibus.periodRetries}">
+			<http:request method="POST" doc:name="Optibus /vehiculos" doc:id="be685bd0-e805-4cb9-a950-691b13debcfe" config-ref="HTTP_Request_optibus_ops_configuration" path="${optibus.vehicles.put.path}" sendCorrelationId="ALWAYS" correlationId="#[correlationId&#93;" responseTimeout="${optibus.responseTimeout}">
+				<http:headers ><![CDATA[#[output application/java
+&#45;&#45;-
+{
+	"Authorization" : vars.token
+}&#93;&#93;&#93;></http:headers>
+			</http:request>
+		</until-successful> [STUDIO] -->
+		<logger level="DEBUG" doc:name="Response" doc:id="b8fc7d88-364a-4760-a6f2-c8eb959608be" message="Optibus API Response: domain=#[vars.originalAttributes.headers.domain], payload=#[sizeOf(payload.vehicles)]"/>
+		<ee:transform doc:name="Response" doc:id="6ff1d806-9c36-4a75-90e6-ba4e4238ace6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "detail": "Vehicles updated successfully",
+  "instance": vars.originalAttributes.relativePath,
+  "timestamp": now() as String {format: "yyyy-MM-dd'T'hh:mm:ss'Z'"}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="httpStatus" ><![CDATA[200]]></ee:set-variable>
+				<ee:set-variable resource="dataweave/mapping-headers.dwl" variableName="outboundHeaders" />
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="End" doc:id="4fcc9fc0-df4f-4712-a0cc-067c14e952a8" message="Synchronize Vehicles End"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6d2945b9-b548-48d6-8ee8-7a7f70ebc6fd" type="HTTP:BAD_GATEWAY, HTTP:BAD_REQUEST, HTTP:CLIENT_SECURITY, HTTP:CONNECTIVITY, HTTP:FORBIDDEN, HTTP:INTERNAL_SERVER_ERROR, HTTP:METHOD_NOT_ALLOWED, HTTP:NOT_ACCEPTABLE, HTTP:NOT_FOUND, HTTP:PARSING, HTTP:RETRY_EXHAUSTED, HTTP:SECURITY, HTTP:SERVICE_UNAVAILABLE, HTTP:TIMEOUT, HTTP:TOO_MANY_REQUESTS, HTTP:UNAUTHORIZED, HTTP:UNSUPPORTED_MEDIA_TYPE">
+				<ee:transform doc:name="Error" doc:id="84954dc0-0c32-4cc6-a65f-ed430a954275" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "detail": "Optibus error",
+  "instance": vars.originalAttributes.relativePath,
+  "timestamp": now() as String {format: "yyyy-MM-dd'T'hh:mm:ss'Z'"}
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+						<ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error" doc:id="bc6cd3b6-f2ab-4cff-b623-6eb0e902a98c" message="Synchronize Vehicles Optibus Error"/>
+			</on-error-continue>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="0e400a5c-14bf-4bc4-a473-939e985a93a4" type="EXPRESSION">
+				<ee:transform doc:name="Error" doc:id="33b0cc19-c64e-467f-be48-77ed7776a077" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "detail": "Error generating response",
+  "instance": vars.originalAttributes.relativePath,
+  "timestamp": now() as String {format: "yyyy-MM-dd'T'hh:mm:ss'Z'"}
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+						<ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+					</ee:variables>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error" doc:id="9f5794e4-c25b-4a65-b001-f17e102df04a" message="Synchronize Vehicles Response Error" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

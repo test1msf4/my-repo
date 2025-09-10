@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd">
+    <apikit:config name="optibus-sapi-config" api="resource::65061c6d-9a28-42e7-b310-05629b3c1b05:optibus-sapi:1.0.29:raml:zip:optibus-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:listener-config name="optibus-sapi-httpListenerConfig" doc:name="HTTP Listener config" doc:id="57c2a305-b770-4f00-b0aa-16d2b4831d5c">
+        <http:listener-connection host="${api.host}" port="${api.port}" readTimeout="${api.readTimeout}" />
+    </http:listener-config>
+    <flow name="optibus-sapi-main">
+        <http:listener path="/api/v1/*" config-ref="optibus-sapi-httpListenerConfig">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="optibus-sapi-config" doc:id="b2ec476e-6b6c-4c36-b736-20f6876b2bda" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Create Bad request response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Create not found response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Create not allowed response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[405]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Create not acceptable response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[406]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Create unsupported response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Create not implemented response">
+                    <ee:message>
+                        <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[501]]></ee:set-variable>
+                        <ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <!-- [STUDIO:"optibus-sapi-console"]<flow name="optibus-sapi-console"> <http:listener 
+		config-ref="optibus-sapi-httpListenerConfig" path="/console/*"> <http:response 
+		statusCode="#[vars.httpStatus default 200&#93;"> <http:headers>#[vars.outboundHeaders 
+		default {}&#93;</http:headers> </http:response> <http:error-response statusCode="#[vars.httpStatus 
+		default 500&#93;"> <http:body>#[payload&#93;</http:body> <http:headers>#[vars.outboundHeaders 
+		default {}&#93;</http:headers> </http:error-response> </http:listener> <apikit:console 
+		config-ref="optibus-sapi-config" /> <error-handler> <on-error-propagate type="APIKIT:NOT_FOUND"> 
+		<ee:transform doc:name="Transform Message"> <ee:message> <ee:set-payload><![CDATA[%dw 
+		2.0 output application/json &#45;&#45;- {message: "Resource not found"}&#93;&#93;></ee:set-payload> 
+		</ee:message> <ee:variables> <ee:set-variable variableName="httpStatus">404</ee:set-variable> 
+		</ee:variables> </ee:transform> </on-error-propagate> </error-handler> </flow> 
+		[STUDIO] -->
+    <flow name="put:\drivers:application\json:optibus-sapi-config">
+        <flow-ref doc:name="put-drivers-optibus-flow" doc:id="fa4edc75-35ea-46c3-8a6e-c13169f7130e" name="upsert-drivers-flow" />
+    </flow>
+    <flow name="put:\vehicles:application\json:optibus-sapi-config">
+        <flow-ref doc:name="put-vehicles-optibus-flow" doc:id="dd1f8b91-3a1b-44d0-90ff-b2a04b54e6b1" name="put-vehicles-optibus-flow" />
+    </flow>
+    <flow name="get:\drivers:optibus-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    uuid: "000060",
+    id: "000060",
+    firstName: "VICENTE",
+    lastName: "OLARTE",
+    homeNumber: "660621615",
+    archived: false,
+    employmentPeriods: [
+      {
+        employmentPeriodId: "814e55bb-fc4f-4c11-aba4-fd322185dc69",
+        startDate: "1970-01-01"
+      }
+    ]
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\regions:optibus-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    uuid: "0526557b-10b9-4cef-b5f2-f3bfbfca24d4",
+    name: "Arrasate",
+    isArchived: true,
+    units: []
+  }, 
+  {
+    uuid: "2ae15d0f-d7fc-4bf4-95ae-7f968fcf824a",
+    name: "Untitled Region",
+    isArchived: true,
+    units: []
+  }, 
+  {
+    uuid: "4bb779dd-be53-4bfb-b75b-ee0e4588d119",
+    name: "Vitoria",
+    isArchived: true,
+    units: []
+  }, 
+  {
+    uuid: "814e5b5b-fc4f-4c11-aba4-fd322185dc69",
+    name: "Gipuzkoa",
+    isArchived: false,
+    units: [
+      {
+        name: "Arrasate",
+        code: "6",
+        uuid: "54c54872-84db-4a14-ac4a-74df0d128e6e",
+        isArchived: false
+      }, 
+      {
+        name: "Bilbao",
+        code: "3",
+        uuid: "8fecfb31-c1ea-4b10-b6ae-797758bcc94c",
+        isArchived: false
+      }, 
+      {
+        name: "Donostia",
+        code: "2",
+        uuid: "dd1c526d-8325-4677-af13-d42bd0b7034d",
+        isArchived: false
+      }, 
+      {
+        name: "Vitoria",
+        code: "4",
+        uuid: "00b7e373-07ec-4ff3-919d-f6c629470530",
+        isArchived: false
+      }
+    ]
+  }, 
+  {
+    uuid: "97d710ad-95ae-4a91-a6b1-a9f837a5503c",
+    name: "Donostia",
+    isArchived: true,
+    units: []
+  }, 
+  {
+    uuid: "a4467f70-bc57-4302-be19-e9bf4c8717f7",
+    name: "Bilbao",
+    isArchived: true,
+    units: []
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\vehicles:optibus-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    depot: "814e55bb-fc4f-4c11-aba4-fd322185dc69",
+    model: "IBAT",
+    licensePlate: "ROMERAL",
+    id: "1001",
+    archived: false,
+    attributes: [
+      {
+        attributeId: "posición",
+        date: "2025-03-18",
+        value: "A string"
+      }
+    ],
+    depotPeriods: [
+      {
+        depotId: "814e55bb-fc4f-4c11-aba4-fd322185dc69",
+        startDate: "1970-01-01",
+        endDate: "2025-02-09"
+      }
+    ],
+    inactiveTime: [
+      {
+        startDate: "1970-01-01"
+      }
+    ],
+    notes: [
+      {
+        endDate: "2025-02-09",
+        note: "Una nota para el conductor",
+        startTimeSec: 480,
+        endTimeSec: 590
+      }
+    ]
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\vehicles\depot-period:optibus-sapi-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    depotId: "810bec1e-c677-4bda-805f-cb5fa2a90973",
+    "type": "TUR",
+    endDate: "2025-08-13",
+    endTime: 1800,
+    opUnitId: "OP-001",
+    periodId: "PER-2025",
+    startDate: "2025-08-12",
+    startTime: 800,
+    vehicleId: "1001"
+  }
+] as Array {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

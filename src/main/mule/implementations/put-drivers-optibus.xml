@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="upsert-drivers-flow" doc:id="194f591e-9f45-4a99-ba9c-7173deb2ea35" >
+		<flow-ref doc:name="initial-vars-subflow" doc:id="8add890a-23f3-48ee-ab87-546d70a70cb6" name="initial-vars-subflow"/>
+		<logger level="INFO" doc:name="Request" doc:id="43619170-1780-4dc5-b99d-9d81b6f7c744" message="INIT  - Process Upsert drivers SAPI, timeExecute:#[now()] with correlation id: #[correlationId], domain=#[attributes.headers.Domain]"/>
+		<ee:transform doc:name="Set payloadDriverOPS" doc:id="219cb521-eafd-4f8d-921d-0ebb6f06a310">
+				<ee:message>
+					<ee:set-payload resource="dataweave/mapping-request-drivers-payload.dwl" />
+				</ee:message>
+			</ee:transform>
+		<logger level="DEBUG" doc:name="Request Upsert drivers" doc:id="3381aa38-3693-43d7-9e9b-d1c57c76a72d" message="#[payload]" />
+		<until-successful maxRetries="#['${optibus.maxRetries}']" doc:name="Until Successful" doc:id="c9c31f29-e6d5-4413-9686-b5402a109554" millisBetweenRetries="#['${optibus.periodRetries}']">
+			<try doc:name="Try" doc:id="4695ef64-fb87-425a-afff-078ea86691b6" >
+				<http:request method="POST" doc:name="Optibus /drivers" doc:id="ea76f8bf-9450-4c13-92c7-bb960a4fe057" config-ref="HTTP_Request_optibus_ops_configuration" path="${optibus.drivers.put.path}" target="optibusOutput">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.token
+}]]]></http:headers>
+		</http:request>
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="06ba8d8f-ea6d-4a4a-8b3f-9a0b1e3bf760" type="HTTP:BAD_GATEWAY, HTTP:BAD_REQUEST, HTTP:CLIENT_SECURITY, HTTP:CONNECTIVITY, HTTP:FORBIDDEN, HTTP:INTERNAL_SERVER_ERROR, HTTP:METHOD_NOT_ALLOWED, HTTP:NOT_ACCEPTABLE, HTTP:NOT_FOUND, HTTP:PARSING, HTTP:RETRY_EXHAUSTED, HTTP:SECURITY, HTTP:SERVICE_UNAVAILABLE, HTTP:TIMEOUT, HTTP:TOO_MANY_REQUESTS, HTTP:UNAUTHORIZED, HTTP:UNSUPPORTED_MEDIA_TYPE">
+						<set-variable value='#[read(error..payload[0], "application/json").messages]' doc:name="errorResponseOptubus" doc:id="3499a4f9-df94-4337-a20c-139495b39a24" variableName="errorResponseOptubus" />
+						<logger level="ERROR" doc:name="Logger" doc:id="02a79d98-8997-4114-a779-9e9112e95b92" message='Upsert optibus drivers response code: #[error.errorType] error response: #[vars.errorResponseOptubus] ' />
+					</on-error-propagate>
+				</error-handler>
+			</try>
+		</until-successful>
+		<logger level="DEBUG" doc:name="Response Upsert drivers" doc:id="5291d4e9-07b9-4904-ae88-70292a1154f6" message="END  - Process Upsert drivers SAPI, timeExecute:#[now()] with correlation id: #[correlationId]" />
+		<ee:transform doc:name="Create response" doc:id="d56f3415-f77a-42bf-8a5e-c47413e2bddd" >
+			<ee:message >
+				<ee:set-payload resource="dataweave/mapping-drivers-payload.dwl" />
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dataweave/mapping-headers.dwl" variableName="outboundHeaders" />
+			</ee:variables>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue Optubus" doc:id="858f7850-3e9a-4444-9482-f3a26aa66942" type="HTTP:BAD_GATEWAY, HTTP:BAD_REQUEST, HTTP:CLIENT_SECURITY, HTTP:CONNECTIVITY, HTTP:FORBIDDEN, HTTP:INTERNAL_SERVER_ERROR, HTTP:METHOD_NOT_ALLOWED, HTTP:NOT_ACCEPTABLE, HTTP:NOT_FOUND, HTTP:PARSING, HTTP:RETRY_EXHAUSTED, HTTP:SECURITY, HTTP:SERVICE_UNAVAILABLE, HTTP:TIMEOUT, HTTP:TOO_MANY_REQUESTS, HTTP:UNAUTHORIZED, HTTP:UNSUPPORTED_MEDIA_TYPE">
+				<logger level="ERROR" doc:name="Logger" doc:id="c814f134-7ec1-4aee-8127-823444b7ced9" message="Upsert drivers error: #[error]" />
+				<ee:transform doc:name="Transform Message Reponse optibus" doc:id="8a1eac5c-64ea-4199-a10a-a695ab420a80" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+import * from dataweave::functions
+output application/json
+---
+{
+  "detail": vars.errorResponseOptubus,
+  "instance": attributes.relativePath,
+  "timestamp": dateTimeFormat(now()) 
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+						<ee:set-variable resource="dataweave/mapping-headers-error.dwl" variableName="outboundHeaders" />
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue ALL" doc:id="32c1f28e-dcbd-4668-a842-860d02dddb81" type="ANY">
+				<logger level="ERROR" doc:name="Logger" doc:id="3db9d585-7dea-4150-b988-9d4836d111c2" message="Upsert drivers error: #[error]"/>
+				<ee:transform doc:name="Transform Message Reponse" doc:id="8eed7002-b957-4fcc-8f13-217b6834916d" >
+					<ee:message >
+                      <ee:set-payload resource="dataweave/mapping-payload-error.dwl" />
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

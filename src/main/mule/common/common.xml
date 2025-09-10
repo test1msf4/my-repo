@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="initial-vars-subflow" doc:id="ed11a272-3f4b-4e67-8cae-0f973593dbf7" >
+		<ee:transform doc:name="Set vars: startTime, host, token, originalAttributes" doc:id="16956f52-e622-409d-bc14-4218e174791c" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="originalAttributes" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes]]></ee:set-variable>
+				<ee:set-variable variableName="host" ><![CDATA[ %dw 2.0
+import * from dataweave::functions
+output application/java
+var host = getHost(attributes.headers.domain) as String
+---
+host
+]]></ee:set-variable>
+				<ee:set-variable variableName="token" ><![CDATA[ %dw 2.0
+import * from dataweave::functions
+output application/java
+var host = getToken(attributes.headers.domain) as String
+---
+host]]></ee:set-variable>
+				<ee:set-variable variableName="startTime" ><![CDATA[%dw 2.0
+output application/java
+var startTime=now()
+---
+startTime]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>

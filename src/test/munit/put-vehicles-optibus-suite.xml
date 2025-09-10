@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="put-vehicles-optibus-suite.xml" />
+	<munit:test name="put-vehicles-optibus-flow-test" doc:id="49e387e7-9eb7-4570-a34c-252d418854d3" >
+		<munit:behavior >
+			<munit:set-event doc:name="Set Input" doc:id="06e780e2-dc72-4ef2-95a3-1df45226bacd" >
+				<munit:payload value="#[output application/json --- readUrl('classpath://putvehiclesoptibusflowtest\set-event_payload.dwl')]" encoding="UTF-8" mediaType="application/json" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to put-vehicles-optibus-flow" doc:id="1ae15fc3-c276-400f-a6ec-121c7bc823ce" name="put-vehicles-optibus-flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify startTime" doc:id="ea207326-4fc9-4a9e-a22d-e9878f9f3953" processor="set-variable" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="69f4cb43-3744-4d7c-bdcb-213e92f34868" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify Set vars: host, token, originalAttributes" doc:id="0f425e2f-ae34-48fa-be3d-ab1e736d5646" processor="ee:transform" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="697aa547-1028-49bb-9a38-e5f233900d8c" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify Start" doc:id="84925c99-26eb-403d-9010-58fe1368ed11" processor="logger" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="c23f9501-7ded-438b-a36e-9e8ca1456f62" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify Payload" doc:id="ff74ce6f-26ea-4d32-b6a0-6d4d6e34d9d4" processor="ee:transform" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="97b81af5-080a-4652-a66d-a5dfadd9417b" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify Response" doc:id="c76a5e9b-6549-4147-ae87-f953e998e7d4" processor="logger" times="1">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="b8fc7d88-364a-4760-a6f2-c8eb959608be" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify Response" doc:id="a789616e-2dec-4688-ad53-06ee4084cdec" processor="ee:transform" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="6ff1d806-9c36-4a75-90e6-ba4e4238ace6" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify End" doc:id="a0962451-5da0-45e0-9927-cc1a3a9c3918" processor="logger" times="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="4fcc9fc0-df4f-4712-a0cc-067c14e952a8" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:assert doc:name="Assert payload" doc:id="b7fc12fa-bc57-4a99-9362-70d7fb41409c" message="The payload does not match">
+				<munit-tools:that><![CDATA[#[%dw 2.0
+import putvehiclesoptibusflowtest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

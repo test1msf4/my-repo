@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<api-gateway:autodiscovery apiId="${api.id}"
+		ignoreBasePath="true" doc:name="API Autodiscovery"
+		doc:id="7300eff6-ed0a-42a7-9b07-b84bd3a2e4ee"
+		flowRef="optibus-sapi-main" />
+	<secure-properties:config
+		name="Secure_Properties_Config" doc:name="Secure Properties Config"
+		doc:id="638cc50c-82ab-405d-911c-af631221adc9" key="${mule.key}"
+		file="properties\\${env}-application-config.yaml" />
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="83674fc0-5f8d-4996-ba7b-6c41f4786c30"
+		file="properties\\${env}-application-config.yaml" />
+	<http:request-config
+		name="HTTP_Request_optibus_ops_configuration"
+		doc:name="HTTP Request configuration"
+		doc:id="0e10dad1-1db7-4b75-b4ae-e4a52b33cd5d"
+		responseTimeout="${optibus.responseTimeout}">
+		<http:request-connection
+			protocol="${optibus.protocol}" host="#[vars.host]"
+			port="${optibus.port}" connectionIdleTimeout="${optibus.idleTimeout}" />
+	</http:request-config>
+</mule>

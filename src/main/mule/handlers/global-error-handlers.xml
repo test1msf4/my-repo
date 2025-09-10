@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<error-handler name="global-error-handlers" doc:id="b09e1207-d0be-4edf-a80b-6a2e74f776f4">
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d1cfccae-cd26-40fa-a389-918be73e1575" type="ANY">
+		    <set-variable value="#[500]" doc:name="HTTP Status" doc:id="12c7b95f-6eff-421d-942c-dd7c2704e1bf" variableName="httpStatus"/>
+			<set-variable value='#["An unexpected error occurred while processing the request: " ++ error.detailedDescription]' doc:name="Error Detail" variableName="errorDetail"/>
+		    <flow-ref name="create-error-subflow" doc:name="create-error-subflow"/>
+		</on-error-propagate>
+
+	
+</error-handler>
+	<sub-flow name="create-error-subflow" doc:id="d3087ea0-b04b-4760-a8ef-e1c72b112236" >
+		<set-variable value='#[{&#10;	"X-Correlation-Id": uuid()&#10;}]' doc:name="CustomHeaders" doc:id="2f7ec196-fede-443e-b2cb-188ea6b67c7b" variableName="outboundHeaders"/>
+		<logger level="ERROR" doc:name="Response" doc:id="635ee9b2-5ed2-4ab3-8c57-fb3912cab723" message="#[payload]" />
+		<ee:transform doc:name="Create error response" doc:id="51d5b78d-f69e-4ef6-9fa1-30b76af25a64" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"detail": vars.errorDetail,
+	"instance": attributes.relativePath,
+	"timestamp": now() as String {format: "yyyy-MM-dd'T'HH:mm:ss'Z'"}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>
